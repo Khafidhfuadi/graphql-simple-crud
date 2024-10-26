@@ -25,12 +25,14 @@ const typeDefs = gql`
     _id: ID!
     name: String!
     description: String
+    products: [Product]!
   }
 
   type User {
     _id: ID!
     name: String!
     email: String!
+    orders: [Order]!
   }
 
   type Query {
@@ -101,10 +103,47 @@ const resolvers = {
         categoryId,
       });
     },
+    updateProduct: async (
+      _,
+      { _id, name, price, description, stock, categoryId }
+    ) => {
+      return await Product.findByIdAndUpdate(
+        _id,
+        { name, price, description, stock, categoryId },
+        { new: true }
+      );
+    },
+    deleteProduct: async (_, { _id }) => {
+      return await Product.findByIdAndDelete(_id);
+    },
+    addOrder: async (_, { userId, products }) => {
+      return await Order.create({ userId, products });
+    },
+    addUser: async (_, { name, email }) => {
+      return await User.create({ name, email });
+    },
   },
   Product: {
     category: async (product) => {
-      return await Category.findById(product.categoryId); // hubungkan category berdasarkan ID
+      return await Category.findById(product.categoryId);
+    },
+  },
+  Category: {
+    products: async (category) => {
+      return await Product.find({ categoryId: category._id });
+    },
+  },
+  User: {
+    orders: async (user) => {
+      return await Order.find({ userId: user._id });
+    },
+  },
+  Order: {
+    userId: async (order) => {
+      return await User.findById(order.userId);
+    },
+    products: async (order) => {
+      return await Product.find({ _id: { $in: order.products } });
     },
   },
 };
